@@ -1,5 +1,4 @@
 # Linux_learn
-# Linux_learn
 *******************************************************************
 1. u-boot
 make CROSS_COMPILE=arm-linux-gnueabi- ARCH=arm distclean
@@ -131,4 +130,31 @@ make CROSS_COMPILE=arm-linux-gnueabi- ARCH=arm O=./project_rootfs install
 *******************************************************************
 4. 退出qemu
 ps -A | grep qemu-system-arm | awk '{print $1}' | xargs sudo kill -9 
+
+
+
+
+
+
+
+sudo apt install tftpd-hpa tftp-hpa
+mkdir -p /home/xxx/tftpboot
+sudo vim /etc/default/tftpd-hpa
+sudo service tftpd-hpa restart
+
+# /etc/default/tftpd-hpa
+
+TFTP_USERNAME="tftp"
+TFTP_DIRECTORY="/home/xpeng/Documents/Linux_learn/tftpboot"
+TFTP_ADDRESS=":69"
+TFTP_OPTIONS="-l -c -s --secure"
+
+***
+TFTP_DIRECTORY 作为TFTP SERVER的目录，该目录需可读可写权限
+TFTP_ADDRESS 为0.0.0.0:69 表示所有IP源都可以访问
+TFTP_OPTIONS 为“-l -c -s” 其中
+-l： 以standardalone/listen 模式启动TFTP服务，而不是从xinetd程序
+-c: 可创建新文件。默认情况下TFTP只允许覆盖原有文件而不能创造新文件
+-s：改变TFTP启动的根目录。客户端启动TFTP时，不再需要输入指定目录，填写文件的文件路径，而是使用配置文件写好的目录
+
 
