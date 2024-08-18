@@ -36,12 +36,11 @@ sudo mkdir -p tmpfs
 sudo mount -t ext3 a9rootfs.ext3 tmpfs/ -o loop
 sudo cp -r rootfs/*  tmpfs/
 sudo umount tmpfs
-
+******************************************************************
 sudo dd if=/dev/zero of=vexpress-ca9-next.img bs=1M count=64
 sudo parted vexpress-ca9-next.img --script -- mklabel msdos
 sudo parted vexpress-ca9-next.img --script -- mkpart primary fat32 2048s 40960s
 sudo parted vexpress-ca9-next.img --script -- mkpart primary ext4 40961s -1
-
 
 u-boot 支持运行脚本, 我们可以使用脚本来让u-boot自动运行上面的命令行, 不过 u-boot 并不会直接运行纯文本文件, 他需要对脚本文件使用 mkimage 进行打包, 加入头信息, 这是为了安全考虑的.
 新建一个文件 boot.cmd , 然后直接拷贝上面的命令行内容到文件
@@ -52,6 +51,14 @@ setenv bootargs "root=/dev/mmcblk0 rw console=ttyAMA0"
 bootz 0x60008000 - 0x61000000
 
 mkimage -C none -A arm -T script -d boot.cmd boot.scr
+
+sudo mkfs.fat vexpress-ca9-next.img
+sudo mount -o loop vexpress-ca9-next.img  tmpfs/
+sudo cp ../project_kernel/arch/arm/boot/zImage  tmpfs/
+sudo cp ../project_kernel/arch/arm/boot/dts/vexpress-v2p-ca9.dtb  tmpfs/
+sudo cp boot.scr tmpfs/
+sudo umount tmpfs
+******************************************************************
 #创建SD镜像
 $ sudo dd if=/dev/zero of=vexpress-ca9-next.img bs=1M count=64
 [sudo] password for xpeng: 
@@ -136,12 +143,11 @@ $ sudo cp -r rootfs/* tmpfs/p2/
 $ sudo umount tmpfs/p1 tmpfs/p2
 $ sudo losetup -d /dev/loop13
 
-sudo mkfs.fat vexpress-ca9-next.img
-sudo mount -o loop vexpress-ca9-next.img  tmpfs/
-sudo cp ../project_kernel/arch/arm/boot/zImage  tmpfs/
-sudo cp ../project_kernel/arch/arm/boot/dts/vexpress-v2p-ca9.dtb  tmpfs/
-sudo cp boot.scr tmpfs/
-sudo umount tmpfs
+
+#define CONFIG_BOOTCOMMAND "load mmc 0:1 0x60003000 uImage;" \
+"load mmc 0:2 0x60800000 vexpress-v2p-ca9.dtb;" \
+"setenv bootargs 'root=/dev/mmcblk0p2 rw rootfstyp3=ext3 rootwait earlycon console=ttyAMA0 init=/linuxrc ignore_loglevel' \
+"bootm 0x60003000 - 0x60800000;"
 
 
 
