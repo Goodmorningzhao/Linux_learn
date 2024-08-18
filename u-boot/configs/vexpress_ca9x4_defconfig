@@ -56,8 +56,3 @@ CONFIG_SMC911X_32_BIT=y
 CONFIG_BAUDRATE=38400
 CONFIG_DM_SERIAL=y
 CONFIG_SYS_TIMER_COUNTS_DOWN=y
-
-#define CONFIG_BOOTCOMMAND "load mmc 0:1 0x60003000 uImage;" \
-"load mmc 0:2 0x60800000 vexpress-v2p-ca9.dtb;" \
-"setenv bootargs 'root=/dev/mmcblk0p2 rw rootfstyp3=ext3 rootwait earlycon console=ttyAMA0 init=/linuxrc ignore_loglevel' \
-"bootm 0x60003000 - 0x60800000;"
