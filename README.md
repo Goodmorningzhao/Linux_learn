@@ -133,7 +133,9 @@ ps -A | grep qemu-system-arm | awk '{print $1}' | xargs sudo kill -9
 
 
 
-
+Image：内核映像文件，大约为4M；
+zImage：内核的一种映像压缩文件，不到2M；内核编译（make）之后会生成Image和zImage；
+uImage：u-boot专用的映像文件，它是在zImage之前加上一个长度为64字节的“头”，说明这个内核的版本、加载位置、生成时间、大小等信息，在0x40之后与zImage没有任何区别。
 
 
 

@@ -52,8 +52,90 @@ setenv bootargs "root=/dev/mmcblk0 rw console=ttyAMA0"
 bootz 0x60008000 - 0x61000000
 
 mkimage -C none -A arm -T script -d boot.cmd boot.scr
+#创建SD镜像
+$ sudo dd if=/dev/zero of=vexpress-ca9-next.img bs=1M count=64
+[sudo] password for xpeng: 
+64+0 records in
+64+0 records out
+67108864 bytes (67 MB, 64 MiB) copied, 0.146629 s, 458 MB/s
+#创建放置内核文件的分区，大小为16M
+$ sudo sgdisk -n 0:0:+16M -c 0:kernel vexpress-ca9-next.img 
+Creating new GPT entries in memory.
+Setting name!
+partNum is 0
+Warning: The kernel is still using the old partition table.
+The new table will be used at the next reboot or after you
+run partprobe(8) or kpartx(8)
+The operation has completed successfully. 
+#使用剩余空间创建根文件系统分区
+$ sudo sgdisk -n 0:0:0 -c 0:rootfs vexpress-ca9-next.img 
+Setting name!
+partNum is 1
+Warning: The kernel is still using the old partition table.
+The new table will be used at the next reboot or after you
+run partprobe(8) or kpartx(8)
+The operation has completed successfully.
+#显示分区信息
+$ sudo sgdisk -p vexpress-ca9-next.img 
+Disk vexpress-ca9-next.img: 131072 sectors, 64.0 MiB
+Sector size (logical): 512 bytes
+Disk identifier (GUID): 2034661E-C6FE-48EF-A01B-33D02DDB14F6
+Partition table holds up to 128 entries
+Main partition table begins at sector 2 and ends at sector 33
+First usable sector is 34, last usable sector is 131038
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
 
-sudo dd if=/dev/zero of=vexpress-ca9-next.img bs=1M count=64
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048           34815   16.0 MiB    8300  kernel
+   2           34816          131038   47.0 MiB    8300  rootfs
+#显示一个空的loop文件
+$ sudo losetup -f
+/dev/loop13
+#将SD镜像挂载到空的loop设备上,如果报错一般是因为losetup -f 显示的设备不可用
+$ sudo losetup /dev/loop13 vexpress-ca9-next.img
+#将指定设备的分区变化通知操作系统
+sudo partprobe /dev/loop13
+#可以使用以下命令代替 ？？？？
+$ sudo losetup -fP --show vexpress-ca9-next.img 
+/dev/loop14
+
+$ ls /dev/loop13*
+/dev/loop13  /dev/loop13p1  /dev/loop13p2
+#格式化分区，为了和u-boot 相关设置兼容，建议文件格式为ext3
+$ sudo mkfs.ext3 /dev/loop13p1
+mke2fs 1.45.5 (07-Jan-2020)
+Discarding device blocks: done                            
+Creating filesystem with 4096 4k blocks and 4096 inodes
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (1024 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+$ sudo mkfs.ext3 /dev/loop13p2
+mke2fs 1.45.5 (07-Jan-2020)
+Discarding device blocks: done                            
+Creating filesystem with 12027 4k blocks and 12032 inodes
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (1024 blocks): done
+Writing superblocks and filesystem accounting information: done
+#挂载
+$ mkdir tmpfs/p1
+$ mkdir tmpfs/p2
+
+$ sudo mount -t ext3 /dev/loop13p1 tmpfs/p1
+$ sudo mount -t ext3 /dev/loop13p2 tmpfs/p2
+
+$ sudo cp ../project_kernel/arch/arm/boot/uImage  tmpfs/p1/
+$ sudo cp ../project_kernel/arch/arm/boot/dts/vexpress-v2p-ca9.dtb  tmpfs/p2/
+$ sudo cp -r rootfs/* tmpfs/p2/
+#卸载
+$ sudo umount tmpfs/p1 tmpfs/p2
+$ sudo losetup -d /dev/loop13
+
 sudo mkfs.fat vexpress-ca9-next.img
 sudo mount -o loop vexpress-ca9-next.img  tmpfs/
 sudo cp ../project_kernel/arch/arm/boot/zImage  tmpfs/
